@@ -1,18 +1,3 @@
-/**
- * Copyright Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.google.firebase.codelab.friendlychat
 
 import android.content.Intent
@@ -21,9 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.firebase.ui.auth.AuthUI
@@ -35,13 +18,13 @@ import com.google.firebase.codelab.friendlychat.databinding.ActivityMainBinding
 import com.google.firebase.codelab.friendlychat.model.FriendlyMessage
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.ktx.storage
 
-
-class MainActivity : AppCompatActivity() {
+class MainActivity2 : AppCompatActivity(){
     private lateinit var binding: ActivityMainBinding
     private lateinit var manager: LinearLayoutManager
     // Firebase instance variables
@@ -78,15 +61,9 @@ class MainActivity : AppCompatActivity() {
         // The FirebaseRecyclerAdapter class and options come from the FirebaseUI library
         // See: https://github.com/firebase/FirebaseUI-Android
         val options = FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-                .setQuery(messagesRef, FriendlyMessage::class.java)
-                .build()
+            .setQuery(messagesRef, FriendlyMessage::class.java)
+            .build()
         adapter = FriendlyMessageAdapter(options, getUserName())
-
-        //change profile name
-        val mTextView = findViewById<View>(R.id.tvUsername) as? TextView
-        Log.d("username", "name=" + getUserName())
-        mTextView?.text = "sunghee";
-
         binding.progressBar.visibility = ProgressBar.INVISIBLE
         manager = LinearLayoutManager(this)
         manager.stackFromEnd = true
@@ -96,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         // Scroll down when a new message arrives
         // See MyScrollToBottomObserver for details
         adapter.registerAdapterDataObserver(
-                MyScrollToBottomObserver(binding.messageRecyclerView, adapter, manager)
+            MyScrollToBottomObserver(binding.messageRecyclerView, adapter, manager)
         )
 
         // Disable the send button when there's no text in the input field
@@ -106,10 +83,10 @@ class MainActivity : AppCompatActivity() {
         // When the send button is clicked, send a text message
         binding.sendButton.setOnClickListener {
             val friendlyMessage = FriendlyMessage(
-                    binding.messageEditText.text.toString(),
-                    getUserName(),
-                    getPhotoUrl(),
-                    null /* no image */
+                binding.messageEditText.text.toString(),
+                getUserName(),
+                getPhotoUrl(),
+                null /* no image */
             )
             database.reference.child(MESSAGES_CHILD).push().setValue(friendlyMessage)
             binding.messageEditText.setText("")
@@ -123,8 +100,7 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, REQUEST_IMAGE)
         }
 
-        supportActionBar?.title = "Need Help Room";  // provide compatibility to all the versions
-
+        supportActionBar?.title = "Show Off Room";  // provide compatibility to all the versions
 
         // When running in debug mode, connect to the Firebase Emulator Suite.
         // "10.0.2.2" is a special IP address which allows the Android Emulator
@@ -206,28 +182,28 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Uri: " + uri.toString())
                 val user = auth.currentUser
                 val tempMessage =
-                        FriendlyMessage(null, getUserName(), getPhotoUrl(), LOADING_IMAGE_URL)
+                    FriendlyMessage(null, getUserName(), getPhotoUrl(), LOADING_IMAGE_URL)
                 database.reference.child(MESSAGES_CHILD).push()
-                        .setValue(
-                                tempMessage,
-                                DatabaseReference.CompletionListener { databaseError, databaseReference ->
-                                    if (databaseError != null) {
-                                        Log.w(
-                                                TAG, "Unable to write message to database.",
-                                                databaseError.toException()
-                                        )
-                                        return@CompletionListener
-                                    }
+                    .setValue(
+                        tempMessage,
+                        DatabaseReference.CompletionListener { databaseError, databaseReference ->
+                            if (databaseError != null) {
+                                Log.w(
+                                    TAG, "Unable to write message to database.",
+                                    databaseError.toException()
+                                )
+                                return@CompletionListener
+                            }
 
-                                    // Build a StorageReference and then upload the file
-                                    val key = databaseReference.key
-                                    // val storageReference = Firebase.storage
-                                    val storageReference = FirebaseStorage.getInstance("gs://chat-demo-4f070.appspot.com/")
-                                            .getReference(user!!.uid)
-                                            .child(key!!)
-                                            .child(uri!!.lastPathSegment!!)
-                                    putImageInStorage(storageReference, uri, key)
-                                })
+                            // Build a StorageReference and then upload the file
+                            val key = databaseReference.key
+                            // val storageReference = Firebase.storage
+                            val storageReference = FirebaseStorage.getInstance("gs://chat-demo-4f070.appspot.com/")
+                                .getReference(user!!.uid)
+                                .child(key!!)
+                                .child(uri!!.lastPathSegment!!)
+                            putImageInStorage(storageReference, uri, key)
+                        })
             }
         }
     }
@@ -235,27 +211,27 @@ class MainActivity : AppCompatActivity() {
     private fun putImageInStorage(storageReference: StorageReference, uri: Uri, key: String?) {
         // Upload the image to Cloud Storage
         storageReference.putFile(uri)
-                .addOnSuccessListener(
-                        this
-                ) { taskSnapshot -> // After the image loads, get a public downloadUrl for the image
-                    // and add it to the message.
-                    taskSnapshot.metadata!!.reference!!.downloadUrl
-                            .addOnSuccessListener { uri ->
-                                val friendlyMessage =
-                                        FriendlyMessage(null, getUserName(), getPhotoUrl(), uri.toString())
-                                database.reference
-                                        .child(MESSAGES_CHILD)
-                                        .child(key!!)
-                                        .setValue(friendlyMessage)
-                            }
-                }
-                .addOnFailureListener(this) { e ->
-                    Log.w(
-                            TAG,
-                            "Image upload task was unsuccessful.",
-                            e
-                    )
-                }
+            .addOnSuccessListener(
+                this
+            ) { taskSnapshot -> // After the image loads, get a public downloadUrl for the image
+                // and add it to the message.
+                taskSnapshot.metadata!!.reference!!.downloadUrl
+                    .addOnSuccessListener { uri ->
+                        val friendlyMessage =
+                            FriendlyMessage(null, getUserName(), getPhotoUrl(), uri.toString())
+                        database.reference
+                            .child(MESSAGES_CHILD)
+                            .child(key!!)
+                            .setValue(friendlyMessage)
+                    }
+            }
+            .addOnFailureListener(this) { e ->
+                Log.w(
+                    TAG,
+                    "Image upload task was unsuccessful.",
+                    e
+                )
+            }
     }
 
     private fun signOut() {
@@ -265,21 +241,21 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    companion object {
-        private const val TAG = "MainActivity"
-        const val MESSAGES_CHILD = "messages"
-        const val ANONYMOUS = "anonymous"
-        private const val REQUEST_IMAGE = 2
-        private const val LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif"
-    }
-
     private fun changeRoom() {
-        val i = Intent(applicationContext, MainActivity2::class.java)
+        val i = Intent(applicationContext, MainActivity::class.java)
         startActivity(i)
     }
 
     private fun showProfile() {
         val i = Intent(applicationContext, MyProfile::class.java)
         startActivity(i)
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
+        const val MESSAGES_CHILD = "messages2"
+        const val ANONYMOUS = "anonymous"
+        private const val REQUEST_IMAGE = 2
+        private const val LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif"
     }
 }

@@ -53,6 +53,7 @@ class SignInActivity : AppCompatActivity() {
 
         // Initialize FirebaseAuth
         auth = Firebase.auth
+
     }
 
     public override fun onStart() {
